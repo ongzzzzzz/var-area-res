@@ -20,12 +20,15 @@ function windowResized() {
   sim.layout();
 }
 
+let showIdeal = false;
+
 class VarAreaExperiment {
   constructor() {
     // resistor parameters
-    this.L = 1.0; // meters
+    this.L = 0.01; // meters (1 cm)
+    this.ell = 0.008; // meters (0.8cm)
     this.r0 = 0.0004; // meters (0.4 mm)
-    this.rho = 1.1e-6; // ohm·m (high-resistivity alloy)
+    this.rho = 1e-4; // ohm·m (lowkey vibes since theres such a range)
     this.totalR = 1.0;
 
     // simulation parameters
@@ -36,15 +39,14 @@ class VarAreaExperiment {
     this.currentA = 0.25; // amps
     this.noiseStd = 0.5; // volts
     this.probeX = 0.35; // m, starting position
+    this.k_b = 1.380649e-23; // boltzmann my goat
     this.tempK = 300; // Kelvin for Johnson noise
-    this.noiseBW = 4e16; // Hz effective bandwidth (wide to make noise visible)
-    this.k_b = 1.380649e-23;
+    this.noiseBW = 9e9; // Hz effective bandwidth (wide to make noise visible)
 
 
     // simulation variables
-    this.showTruth = false;
-    this.showIdeal = false;
-    this.radiusAt = (x => this.r0 * Math.exp(-x/this.L));
+    this.showTruth = true;
+    this.radiusAt = (x => this.r0 * Math.exp(-x/this.ell));
     this.areaAt = (x => Math.PI * Math.pow(this.radiusAt(x), 2));
     this.cumulative = new Array(this.samples).fill(0);
     for (let i = 1; i < this.samples; i++) {
@@ -102,18 +104,18 @@ class VarAreaExperiment {
 
     // Current slider
     const iBlock = this.makeControlBlock("Drive Current (A)");
-    this.iSlider = createSlider(0.01, 0.75, this.currentA, 0.01);
+    this.iSlider = createSlider(0.01, 0.75, this.currentA, 0);
     this.iSlider.input(() => (this.currentA = this.iSlider.value()));
-    this.iValue = createSpan(`${fmtNum(this.currentA, 2)} A`).addClass("value-pill");
+    this.iValue = createSpan(`${fmtNum(this.currentA, 3)} A`).addClass("value-pill");
     iBlock.child(this.iValue);
     iBlock.child(this.iSlider);
     sliderRow.child(iBlock);
 
     // Probe slider
     const xBlock = this.makeControlBlock("Probe Position x (m)");
-    this.xSlider = createSlider(0, this.L, this.probeX, 0.001);
+    this.xSlider = createSlider(0, this.L, this.probeX, 0);
     this.xSlider.input(() => (this.probeX = this.xSlider.value()));
-    this.xValue = createSpan(`${fmtNum(this.probeX, 3)} m`).addClass("value-pill");
+    this.xValue = createSpan(`${fmtNum(this.probeX * 1000, 3)} mm`).addClass("value-pill");
     xBlock.child(this.xValue);
     xBlock.child(this.xSlider);
     sliderRow.child(xBlock);
@@ -160,9 +162,9 @@ class VarAreaExperiment {
     this.truthChk.changed(() => (this.showTruth = this.truthChk.checked()));
     toggleRow.child(this.truthChk);
 
-    this.idealChk = createCheckbox("Show ideal V(x)", this.showIdeal);
-    this.idealChk.changed(() => (this.showIdeal = this.idealChk.checked()));
-    toggleRow.child(this.idealChk);
+    // this.idealChk = createCheckbox("Show ideal V(x)", this.showIdeal);
+    // this.idealChk.changed(() => (this.showIdeal = this.idealChk.checked()));
+    // toggleRow.child(this.idealChk);
 
     this.updatePanelPosition();
   }
@@ -224,11 +226,11 @@ class VarAreaExperiment {
     }
 
     // terminals
+    stroke(255, 120, 80);
+    strokeWeight(3);
     fill(255, 120, 80);
     rect(-16, h * 0.35, 16, h * 0.3, 4);
     rect(w, h * 0.35, 16, h * 0.3, 4);
-    stroke(255, 120, 80);
-    strokeWeight(3);
     line(-30, h * 0.5, -16, h * 0.5);
     line(w + 16, h * 0.5, w + 30, h * 0.5);
 
@@ -293,7 +295,7 @@ class VarAreaExperiment {
 
     // y ticks and scaling
     // const vmax = Math.min(2.0, Math.ceil(this.readings.length == 0 ? 100 : Math.max(...this.readings))); // fixed range 0-2 V
-    const vmax = 5.0;
+    const vmax = 8.0;
     const yticks = 5;
     textAlign(LEFT, CENTER);
     for (let j = 0; j <= yticks; j++) {
@@ -305,7 +307,7 @@ class VarAreaExperiment {
     }
 
     // ideal V(x) curve
-    if (this.showIdeal) {
+    if (showIdeal) {
       noFill();
       stroke(90, 190, 255);
       strokeWeight(2);
@@ -391,8 +393,8 @@ class VarAreaExperiment {
     this.noiseStd = this.nSlider?.value() ?? this.noiseStd;
     this.probeX = this.xSlider?.value() ?? this.probeX;
 
-    if (this.iValue) this.iValue.html(`${fmtNum(this.currentA, 2)} A`);
-    if (this.xValue) this.xValue.html(`${fmtNum(this.probeX, 3)} m`);
+    if (this.iValue) this.iValue.html(`${fmtNum(this.currentA, 3)} A`);
+    if (this.xValue) this.xValue.html(`${fmtNum(this.probeX * 1000, 3)} mm`);
 
     this.drawResistor();
     this.drawGraph();
