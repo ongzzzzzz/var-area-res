@@ -131,7 +131,7 @@ class VarAreaExperiment {
       const vIdeal = this.currentA * res_curr;
       const johnsonStd = Math.sqrt(4 * this.k_b * this.tempK * res_curr * this.noiseBW);
       const ampStd = 0.003; // 3 mV_rms instrument noise
-      const totalStd = Math.sqrt(johnsonStd * johnsonStd + ampStd * ampStd);
+      const totalStd = Math.sqrt(johnsonStd * johnsonStd);
       const vMeas = vIdeal + totalStd * randomGaussian();
       this.readings.push([this.probeX, vMeas]);
       this.updateTable();
