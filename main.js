@@ -37,11 +37,10 @@ class VarAreaExperiment {
 
     this.rng = new Mulberry32(Math.floor(Math.random() * 1e9));
     this.currentA = 0.25; // amps
-    this.noiseStd = 0.5; // volts
     this.probeX = 0.35; // m, starting position
     this.k_b = 1.380649e-23; // boltzmann my goat
     this.tempK = 300; // Kelvin for Johnson noise
-    this.noiseBW = 9e9; // Hz effective bandwidth (wide to make noise visible)
+    this.noiseBW = 9e15; // Hz effective bandwidth (wide to make noise visible)
 
 
     // simulation variables
@@ -130,7 +129,6 @@ class VarAreaExperiment {
 
       const vIdeal = this.currentA * res_curr;
       const johnsonStd = Math.sqrt(4 * this.k_b * this.tempK * res_curr * this.noiseBW);
-      const ampStd = 0.003; // 3 mV_rms instrument noise
       const totalStd = Math.sqrt(johnsonStd * johnsonStd);
       const vMeas = vIdeal + totalStd * randomGaussian();
       this.readings.push([this.probeX, vMeas]);
@@ -390,7 +388,6 @@ class VarAreaExperiment {
 
   draw() {
     this.currentA = this.iSlider?.value() ?? this.currentA;
-    this.noiseStd = this.nSlider?.value() ?? this.noiseStd;
     this.probeX = this.xSlider?.value() ?? this.probeX;
 
     if (this.iValue) this.iValue.html(`${fmtNum(this.currentA, 3)} A`);
